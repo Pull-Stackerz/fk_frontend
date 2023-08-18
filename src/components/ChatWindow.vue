@@ -24,12 +24,12 @@
           <div v-if="message.type === 'text'">{{ message.content }}</div>
           <img v-if="message.type === 'image'" :src="message.content" />
           <div v-if="message.type === 'buttons'">
-            <button
+            <!-- <button
               v-for="button in message.content"
               @click="handleButtonClick(button)"
             >
               {{ button.label }}
-            </button>
+            </button> -->
           </div>
         </div>
       </div>
@@ -63,23 +63,29 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick } from 'vue';
+import { Ref, ref, nextTick } from 'vue';
 import ProductDisplay from './ProductDisplay.vue'; // assuming it's in the same directory
 
 interface Message {
   id: number;
   type: string;
   content: any; // Changed from string to any, since content might hold more complex data
-  owner: string;
+  // owner: string;
+  owner: 'user' | 'server';
 }
 
+// interface ServerReply {
+//   response: string;
+//   productDetails: any[];
+// }
+
 const { showChat } = defineProps(['showChat']);
-const messagesContainer = ref(null);
+const messagesContainer: Ref<HTMLElement | null> = ref(null);
 const messages = ref<Array<Message>>([]);
-const userInput = ref('');
-const isFullScreen = ref(false);
-const isServerTyping = ref(false);
-const productDetails = ref([]);
+const userInput = ref<string>('');
+const isFullScreen = ref<boolean>(false);
+const isServerTyping = ref<boolean>(false);
+const productDetails = ref<any[]>([]);
 
 const toggleFullScreen = () => {
   isFullScreen.value = !isFullScreen.value;
@@ -101,14 +107,14 @@ const fetchProductDetails = async (productName: string) => {
     }
     const data = await response.json();
     return data.result;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching product details:', error.message);
     return [];
   }
 };
 
 // Inside your processServerReply function, make sure to pass the `fetch_from` as well:
-const processServerReply = async (reply) => {
+const processServerReply = async (reply: any) => {
   const productNames = [reply['outfit/cloth'], ...reply.accessories];
   const allProductDetails = [];
 
@@ -124,7 +130,7 @@ const processServerReply = async (reply) => {
 const sendMessage = async () => {
   if (userInput.value.trim() === '') return;
 
-  const userMessage = {
+  const userMessage: Message = {
     id: Date.now(),
     type: 'text',
     content: userInput.value,
@@ -139,7 +145,11 @@ const sendMessage = async () => {
   const serverReply = await fetchServerReply(userMessage.content);
   isServerTyping.value = false;
 
-  const serverMessage = {
+  if (typeof serverReply === 'string') {
+    return;
+  }
+
+  const serverMessage: Message = {
     id: Date.now() + 1,
     type: 'text',
     content: serverReply.response,
@@ -150,10 +160,6 @@ const sendMessage = async () => {
 
   messages.value.push(serverMessage);
   scrollToBottom();
-};
-
-const handleButtonClick = (button) => {
-  // Handle button click
 };
 
 const fetchServerReply = async (message: string) => {
@@ -180,7 +186,7 @@ const fetchServerReply = async (message: string) => {
       response: data.text,
       productDetails: allProductDetails,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching server reply:', error.message);
     return `Error: ${error.message}`;
   }
@@ -188,7 +194,9 @@ const fetchServerReply = async (message: string) => {
 
 const scrollToBottom = () => {
   nextTick(() => {
-    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+    if (messagesContainer.value) {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+    }
   });
 };
 </script>

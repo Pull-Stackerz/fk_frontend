@@ -1,30 +1,35 @@
-<script>
-export default {
-  props: {
-    products: Array,
+<script lang="ts" setup>
+import { ref, computed, PropType } from 'vue';
+
+interface Product {
+  link: string;
+  thumbnail: string;
+  name: string;
+  // Add any other properties if necessary.
+}
+
+const props = defineProps({
+  products: {
+    type: Array as PropType<Product[]>,
+    required: true,
   },
-  data() {
-    return {
-      currentIndex: 0,
-    };
-  },
-  computed: {
-    currentProduct() {
-      return this.products[this.currentIndex];
-    },
-  },
-  methods: {
-    nextProduct() {
-      if (this.currentIndex < this.products.length - 1) {
-        this.currentIndex++;
-      }
-    },
-    previousProduct() {
-      if (this.currentIndex > 0) {
-        this.currentIndex--;
-      }
-    },
-  },
+});
+
+const products = props.products;
+const currentIndex = ref(0);
+
+const currentProduct = computed(() => products[currentIndex.value]);
+
+const nextProduct = () => {
+  if (currentIndex.value < products.length - 1) {
+    currentIndex.value++;
+  }
+};
+
+const previousProduct = () => {
+  if (currentIndex.value > 0) {
+    currentIndex.value--;
+  }
 };
 </script>
 
