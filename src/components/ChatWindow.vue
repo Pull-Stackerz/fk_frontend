@@ -17,7 +17,7 @@
     <div class="messages" ref="messagesContainer">
       <div
         v-for="message in messages"
-        :key="message.id"
+        :key="'message-' + message.id"
         :class="['message', message.owner]"
       >
         <div class="bubble">
@@ -34,11 +34,17 @@
         </div>
       </div>
     </div>
+
+    <div v-for="(details, index) in productDetails" :key="'product-' + index">
+      <ProductDisplay :products="details" />
+    </div>
+
     <div v-if="isServerTyping" class="typing-indicator">
       <span></span>
       <span></span>
       <span></span>
     </div>
+
     <div class="input-container">
       <textarea
         v-model="userInput"
@@ -58,11 +64,12 @@
 
 <script lang="ts" setup>
 import { ref, nextTick } from 'vue';
+import ProductDisplay from './ProductDisplay.vue'; // assuming it's in the same directory
 
 interface Message {
   id: number;
   type: string;
-  content: string;
+  content: any; // Changed from string to any, since content might hold more complex data
   owner: string;
 }
 
@@ -72,6 +79,7 @@ const messages = ref<Array<Message>>([]);
 const userInput = ref('');
 const isFullScreen = ref(false);
 const isServerTyping = ref(false);
+const productDetails = ref([]);
 
 const toggleFullScreen = () => {
   isFullScreen.value = !isFullScreen.value;
@@ -81,6 +89,36 @@ const emits = defineEmits(['closeChat']);
 
 const closeChat = () => {
   emits('closeChat');
+};
+
+const fetchProductDetails = async (productName: string) => {
+  try {
+    const response = await fetch(
+      `https://lazy-rose-squid-gown.cyclic.cloud/search/${productName}`
+    );
+    if (!response.ok) {
+      throw new Error('Failed to fetch product details');
+    }
+    const data = await response.json();
+    return data.result;
+  } catch (error) {
+    console.error('Error fetching product details:', error.message);
+    return [];
+  }
+};
+
+// Inside your processServerReply function, make sure to pass the `fetch_from` as well:
+const processServerReply = async (reply) => {
+  const productNames = [reply['outfit/cloth'], ...reply.accessories];
+  const allProductDetails = [];
+
+  for (const name of productNames) {
+    const details = await fetchProductDetails(name);
+    details.fetch_from = `https://lazy-rose-squid-gown.cyclic.cloud/search/${name}`;
+    allProductDetails.push(details);
+  }
+
+  return allProductDetails;
 };
 
 const sendMessage = async () => {
@@ -95,35 +133,57 @@ const sendMessage = async () => {
 
   messages.value.push(userMessage);
   userInput.value = '';
-
   scrollToBottom();
 
-  // Show typing indicator
   isServerTyping.value = true;
-
-  const serverReply = await mockServerReply(userMessage.content);
-
-  // Hide typing indicator
+  const serverReply = await fetchServerReply(userMessage.content);
   isServerTyping.value = false;
 
   const serverMessage = {
     id: Date.now() + 1,
     type: 'text',
-    content: serverReply,
+    content: serverReply.response,
     owner: 'server',
   };
+
+  productDetails.value = serverReply.productDetails;
 
   messages.value.push(serverMessage);
   scrollToBottom();
 };
 
 const handleButtonClick = (button) => {
-  // Handle button click, probably sending data to server.
+  // Handle button click
 };
 
-const mockServerReply = async (message) => {
-  await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulating network delay
-  return `Server response to "${message}"`;
+const fetchServerReply = async (message: string) => {
+  try {
+    const response = await fetch(
+      'https://dull-lion-jersey.cyclic.cloud/ask-gpt',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ initialInput: message }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch server response');
+    }
+
+    const data = await response.json();
+    const allProductDetails = await processServerReply(data);
+
+    return {
+      response: data.text,
+      productDetails: allProductDetails,
+    };
+  } catch (error) {
+    console.error('Error fetching server reply:', error.message);
+    return `Error: ${error.message}`;
+  }
 };
 
 const scrollToBottom = () => {
@@ -179,7 +239,10 @@ const scrollToBottom = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  max-height: auto; /* You can adjust this value based on your design needs */
+  overflow-y: auto; /* Will show a scrollbar when messages exceed the max-height */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   padding: 10px;
   justify-content: flex-end;
 }
