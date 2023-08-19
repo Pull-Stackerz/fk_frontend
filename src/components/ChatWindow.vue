@@ -35,11 +35,14 @@
           </div>
         </div>
       </div>
-      <!-- <section class="product-display"> -->
-      <div v-for="(details, index) in productDetails" :key="'product-' + index">
-        <ProductDisplay :products="details" />
-      </div>
-      <!-- </section> -->
+      <section class="product-display">
+        <div
+          v-for="(details, index) in productDetails"
+          :key="'product-' + index"
+        >
+          <ProductDisplay :products="details" />
+        </div>
+      </section>
       <div v-if="isServerTyping" class="typing-indicator">
         <span></span>
         <span></span>
@@ -167,6 +170,7 @@ const sendMessage = async () => {
   userInput.value = '';
   scrollToBottom();
 
+  productDetails.value = [];
   isServerTyping.value = true;
   const serverReply = await fetchServerReply(userMessage.content);
   isServerTyping.value = false;
