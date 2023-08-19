@@ -12,7 +12,7 @@ import Home from './pages/Home.vue';
 import ChatIcon from './components/ChatBubble.vue';
 import ChatWindow from './components/ChatWindow.vue';
 
-const showChat = ref(false);
+const showChat = ref(true);
 
 const closeChat = () => {
   showChat.value = false;

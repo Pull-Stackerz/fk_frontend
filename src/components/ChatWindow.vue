@@ -14,37 +14,38 @@
       </button>
     </div>
 
-    <div class="messages" ref="messagesContainer">
-      <div
-        v-for="message in messages"
-        :key="'message-' + message.id"
-        :class="['message', message.owner]"
-      >
-        <div class="bubble">
-          <div v-if="message.type === 'text'">{{ message.content }}</div>
-          <img v-if="message.type === 'image'" :src="message.content" />
-          <div v-if="message.type === 'buttons'">
-            <!-- <button
+    <section class="messageBox">
+      <div class="messages" ref="messagesContainer">
+        <div
+          v-for="message in messages"
+          :key="'message-' + message.id"
+          :class="['message', message.owner]"
+        >
+          <div class="bubble">
+            <div v-if="message.type === 'text'">{{ message.content }}</div>
+            <img v-if="message.type === 'image'" :src="message.content" />
+            <div v-if="message.type === 'buttons'">
+              <!-- <button
               v-for="button in message.content"
               @click="handleButtonClick(button)"
             >
               {{ button.label }}
             </button> -->
+            </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <div v-for="(details, index) in productDetails" :key="'product-' + index">
-      <ProductDisplay :products="details" />
-    </div>
-
-    <div v-if="isServerTyping" class="typing-indicator">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-
+      <!-- <section class="product-display"> -->
+      <div v-for="(details, index) in productDetails" :key="'product-' + index">
+        <ProductDisplay :products="details" />
+      </div>
+      <!-- </section> -->
+      <div v-if="isServerTyping" class="typing-indicator">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </section>
     <div class="input-container">
       <textarea
         v-model="userInput"
@@ -81,7 +82,16 @@ interface Message {
 
 const { showChat } = defineProps(['showChat']);
 const messagesContainer: Ref<HTMLElement | null> = ref(null);
-const messages = ref<Array<Message>>([]);
+const messages = ref<Array<Message>>([
+  {
+    id: 0,
+    type: 'text',
+    content: `for better results try to add as much of the following fields possible:
+    occasion, region, season, age, gender, ethnicity, body_type, preferred_fabrics
+    `,
+    owner: 'server',
+  },
+]);
 const userInput = ref<string>('');
 const isFullScreen = ref<boolean>(false);
 const isServerTyping = ref<boolean>(false);
@@ -115,7 +125,23 @@ const fetchProductDetails = async (productName: string) => {
 
 // Inside your processServerReply function, make sure to pass the `fetch_from` as well:
 const processServerReply = async (reply: any) => {
-  const productNames = [reply['outfit/cloth'], ...reply.accessories];
+  const extractProductName = (reply: any) => {
+    if (reply['outfit/cloth']) {
+      return reply['outfit/cloth'];
+    }
+    if (reply['outfit']) {
+      return reply['outfit'];
+    }
+    if (reply['cloth']) {
+      return reply['cloth'];
+    }
+    return null;
+  };
+
+  const mainProduct = extractProductName(reply);
+  const productNames = mainProduct
+    ? [mainProduct, ...reply.accessories]
+    : [...reply.accessories];
   const allProductDetails = [];
 
   for (const name of productNames) {
@@ -206,9 +232,9 @@ const scrollToBottom = () => {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 500px;
+  width: 700px;
   height: 600px;
-  overflow-y: auto;
+  /* overflow-y: auto; */
   border: 1px solid #ccc;
   background-color: #fff;
   border-radius: 8px;
@@ -243,12 +269,20 @@ const scrollToBottom = () => {
   outline: none;
 }
 
+.messageBox {
+  overflow-y: auto;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  /* align-items: flex-end; */
+}
+
 .messages {
   flex: 1;
   display: flex;
   flex-direction: column;
   max-height: auto; /* You can adjust this value based on your design needs */
-  overflow-y: auto; /* Will show a scrollbar when messages exceed the max-height */
+  /* overflow-y: auto; Will show a scrollbar when messages exceed the max-height */
   word-wrap: break-word;
   overflow-wrap: break-word;
   padding: 10px;
@@ -295,6 +329,11 @@ const scrollToBottom = () => {
   padding: 8px 12px;
   margin-left: 8px;
   max-width: 75%;
+}
+
+.product-display {
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .input-container {

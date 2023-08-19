@@ -16,7 +16,7 @@ const props = defineProps({
 });
 
 const products = props.products;
-const currentIndex = ref(0);
+const currentIndex = ref(2);
 
 const currentProduct = computed(() => products[currentIndex.value]);
 
