@@ -6,9 +6,10 @@
     <div class="header">
       <button class="iconz" @click="toggleFullScreen">
         <font-awesome-icon
-          :icon="isFullScreen ? ['fas', 'maximize'] : ['fas', 'minimize']"
+          :icon="isFullScreen ? ['fas', 'minimize'] : ['fas', 'maximize']"
         />
       </button>
+      <h3 class="heading">Generative Ai chat</h3>
       <button class="iconz" @click="closeChat">
         <font-awesome-icon icon="circle-xmark" />
       </button>
@@ -73,15 +74,9 @@ import ProductDisplay from './ProductDisplay.vue'; // assuming it's in the same 
 interface Message {
   id: number;
   type: string;
-  content: any; // Changed from string to any, since content might hold more complex data
-  // owner: string;
+  content: any;
   owner: 'user' | 'server';
 }
-
-// interface ServerReply {
-//   response: string;
-//   productDetails: any[];
-// }
 
 const { showChat } = defineProps(['showChat']);
 const messagesContainer: Ref<HTMLElement | null> = ref(null);
@@ -128,23 +123,21 @@ const fetchProductDetails = async (productName: string) => {
 
 // Inside your processServerReply function, make sure to pass the `fetch_from` as well:
 const processServerReply = async (reply: any) => {
-  const extractProductName = (reply: any) => {
-    if (reply['outfit/cloth']) {
-      return reply['outfit/cloth'];
+  const extractProductNames = (reply: any) => {
+    const products = [];
+    if (reply['outfit(top)']) {
+      products.push(reply['outfit(top)']);
     }
-    if (reply['outfit']) {
-      return reply['outfit'];
+    if (reply['outfit(bottom)']) {
+      products.push(reply['outfit(bottom)']);
     }
-    if (reply['cloth']) {
-      return reply['cloth'];
+    if (reply.accessories && Array.isArray(reply.accessories)) {
+      products.push(...reply.accessories);
     }
-    return null;
+    return products;
   };
 
-  const mainProduct = extractProductName(reply);
-  const productNames = mainProduct
-    ? [mainProduct, ...reply.accessories]
-    : [...reply.accessories];
+  const productNames = extractProductNames(reply);
   const allProductDetails = [];
 
   for (const name of productNames) {
@@ -182,7 +175,7 @@ const sendMessage = async () => {
   const serverMessage: Message = {
     id: Date.now() + 1,
     type: 'text',
-    content: serverReply.response,
+    content: serverReply.text,
     owner: 'server',
   };
 
@@ -194,16 +187,13 @@ const sendMessage = async () => {
 
 const fetchServerReply = async (message: string) => {
   try {
-    const response = await fetch(
-      'https://dull-lion-jersey.cyclic.cloud/ask-gpt',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ initialInput: message }),
-      }
-    );
+    const response = await fetch('https://dull-lion-jersey.cyclic.cloud/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ initialInput: message }),
+    });
 
     if (!response.ok) {
       throw new Error('Failed to fetch server response');
@@ -213,7 +203,7 @@ const fetchServerReply = async (message: string) => {
     const allProductDetails = await processServerReply(data);
 
     return {
-      response: data.text,
+      text: data.text, // Using the text property from the new format
       productDetails: allProductDetails,
     };
   } catch (error: any) {
@@ -262,11 +252,20 @@ const scrollToBottom = () => {
   border-bottom: 1px solid #ccc;
   display: inline-flex;
   justify-content: space-between;
+  background-color: #007bff;
+  border-radius: 8px 8px 0 0;
+}
+
+.heading {
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin: 0;
+  color: #fff;
 }
 
 .iconz {
   font-size: 1.5rem;
-  color: #007bff;
+  color: #fff;
   cursor: pointer;
   background-color: transparent;
   border: none;
