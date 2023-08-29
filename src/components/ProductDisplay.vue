@@ -86,7 +86,7 @@ const previousProduct = () => {
 .product-image {
   width: 100%;
   height: 100%; /* Makes sure the image takes full height of its parent */
-  object-fit: cover; /* Ensures that the image covers the div without getting distorted */
+  object-fit: contain; /* Ensures that the image covers the div without getting distorted */
   display: block;
   cursor: pointer;
 }

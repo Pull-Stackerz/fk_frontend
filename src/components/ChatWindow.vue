@@ -127,10 +127,16 @@ const processServerReply = async (reply: any) => {
     const products = [];
     if (reply['outfit(top)']) {
       products.push(reply['outfit(top)']);
+    } else if (reply['outfit']['top']) {
+      products.push(reply['outfit']['top']);
     }
+
     if (reply['outfit(bottom)']) {
       products.push(reply['outfit(bottom)']);
+    } else if (reply['outfit']['bottom']) {
+      products.push(reply['outfit']['bottom']);
     }
+
     if (reply.accessories && Array.isArray(reply.accessories)) {
       products.push(...reply.accessories);
     }
@@ -201,6 +207,9 @@ const fetchServerReply = async (message: string) => {
 
     const data = await response.json();
     const allProductDetails = await processServerReply(data);
+
+    // console.log('output From ML model:', allProductDetails);
+    // console.log('output From LLM model:', data.text);
 
     return {
       text: data.text, // Using the text property from the new format
