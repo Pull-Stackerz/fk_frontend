@@ -125,16 +125,16 @@ const fetchProductDetails = async (productName: string) => {
 const processServerReply = async (reply: any) => {
   const extractProductNames = (reply: any) => {
     const products = [];
-    if (reply['outfit(top)']) {
+    if (reply?.['outfit(top)']) {
       products.push(reply['outfit(top)']);
-    } else if (reply['outfit']['top']) {
-      products.push(reply['outfit']['top']);
+    } else if (reply?.['outfit']?.['top']) {
+      products.push(reply?.['outfit']?.['top']);
     }
 
-    if (reply['outfit(bottom)']) {
-      products.push(reply['outfit(bottom)']);
-    } else if (reply['outfit']['bottom']) {
-      products.push(reply['outfit']['bottom']);
+    if (reply?.['outfit(bottom)']) {
+      products.push(reply?.['outfit(bottom)']);
+    } else if (reply?.['outfit']?.['bottom']) {
+      products.push(reply?.['outfit']?.['bottom']);
     }
 
     if (reply.accessories && Array.isArray(reply.accessories)) {
